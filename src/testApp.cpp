@@ -109,7 +109,7 @@ void testApp::update()
                     //cout << results << endl;
                         results += ofToString(path.size()) + "\t20\t255\t" + ofToString(ROI.x + ROI_CENTER) + "\t" + ofToString(RESOLUTION_Y - (ROI.y + ROI_CENTER)) + "\t" + ofToString(ROI.x + ROI_CENTER) + "\t" + ofToString(RESOLUTION_Y - (ROI.y + ROI_CENTER)) + "\n";
                         summary += name + "-" + ofToString(path.size()) + ".jpeg\t1\t171.000\t24.429\t0.0\t255\n";
-                        trajectory += path.size() + "\t" + ofToString(ROI.x + ROI_CENTER) + "\t" + ofToString(RESOLUTION_Y - (ROI.y + ROI_CENTER)) + "\n";
+                        trajectory += ofToString(path.size()) + "\t" + ofToString(ROI.x + ROI_CENTER) + "\t" + ofToString(RESOLUTION_Y - (ROI.y + ROI_CENTER)) + "\n";
                         
                         path.push_back( ofPoint(ROI.x + ROI_CENTER, ROI.y + ROI_CENTER));
                 }
@@ -125,7 +125,7 @@ void testApp::update()
             
                 results += ofToString(path.size()) + "\t20\t255\t" + ofToString(ROI.x + ROI_CENTER) + "\t" + ofToString(RESOLUTION_Y - (ROI.y + ROI_CENTER)) + "\t" + ofToString(ROI.x + ROI_CENTER) + "\t" + ofToString(RESOLUTION_Y - (ROI.y + ROI_CENTER)) + "\n";
                 summary += name + "-" + ofToString(path.size()) + ".jpeg\t1\t171.000\t24.429\t0.0\t255\n";
-                trajectory += path.size() + "\t" + ofToString(ROI.x + ROI_CENTER) + "\t" + ofToString(RESOLUTION_Y - (ROI.y + ROI_CENTER)) + "\n";
+                trajectory += ofToString(path.size()) + "\t" + ofToString(ROI.x + ROI_CENTER) + "\t" + ofToString(RESOLUTION_Y - (ROI.y + ROI_CENTER)) + "\n";
                 
                 path.push_back( ofPoint(ROI.x + ROI_CENTER, ROI.y + ROI_CENTER));
             }
@@ -156,7 +156,7 @@ void testApp::update()
                        (prevPoint.y > ROI.y - 15 + ROI_CENTER && prevPoint.y < ROI.y + 15 + ROI_CENTER) ) {
                         results += ofToString(path.size()) + "\t20\t255\t" + ofToString(ROI.x + ROI_CENTER) + "\t" + ofToString(RESOLUTION_Y - (ROI.y + ROI_CENTER)) + "\t" + ofToString(ROI.x + ROI_CENTER) + "\t" + ofToString(RESOLUTION_Y - (ROI.y + ROI_CENTER)) + "\n";
                         summary += name + "-" + ofToString(path.size()) + ".jpeg\t1\t171.000\t24.429\t0.0\t255\n";
-                        trajectory += path.size() + "\t" + ofToString(ROI.x + ROI_CENTER) + "\t" + ofToString(RESOLUTION_Y - (ROI.y + ROI_CENTER)) + "\n";
+                        trajectory += ofToString(path.size()) + "\t" + ofToString(ROI.x + ROI_CENTER) + "\t" + ofToString(RESOLUTION_Y - (ROI.y + ROI_CENTER)) + "\n";
                         
                         path.push_back( ofPoint(ROI.x + ROI_CENTER, ROI.y + ROI_CENTER));
                         bSuccess = true;
@@ -204,10 +204,13 @@ void testApp::draw(){
     ofDrawBitmapString("p        - Pause",           RESOLUTION_X / scale - 200, 35);
     ofDrawBitmapString("r        - Resume",          RESOLUTION_X / scale - 200, 45);
     ofDrawBitmapString("f        - Save file",       RESOLUTION_X / scale - 200, 55);
-    ofDrawBitmapString(",        - Prev video",      RESOLUTION_X / scale - 200, 65);
-    ofDrawBitmapString(".        - Next Video",      RESOLUTION_X / scale - 200, 75);
-    ofDrawBitmapString("SpaceBar - Reset ",          RESOLUTION_X / scale - 200, 85);
-    ofDrawBitmapString("Click    - Select Blob",     RESOLUTION_X / scale - 200, 95);
+    ofDrawBitmapString("s        - Skip frame",      RESOLUTION_X / scale - 200, 65);
+    ofDrawBitmapString(",        - Prev video",      RESOLUTION_X / scale - 200, 75);
+    ofDrawBitmapString(".        - Next Video",      RESOLUTION_X / scale - 200, 85);
+    ofDrawBitmapString("1        - Res: 1920x1080",  RESOLUTION_X / scale - 200, 95);
+    ofDrawBitmapString("2        - Res: 960x540",    RESOLUTION_X / scale - 200, 105);
+    ofDrawBitmapString("SpaceBar - Reset ",          RESOLUTION_X / scale - 200, 115);
+    ofDrawBitmapString("Click    - Select Blob",     RESOLUTION_X / scale - 200, 125);
     
     ofDrawBitmapString("Remaining: " + ofToString(remaining),     RESOLUTION_X / scale - 200, RESOLUTION_Y / 2 - 30);
 
@@ -311,7 +314,7 @@ void testApp::writeVideo() {
     
     ofBufferToFile("experiments/" + name + "-particles.txt", bResults);
     ofBufferToFile("experiments/" + name + "-summary.txt", bSummary);
-    ofBufferToFile("ants/"        + name + "-ants.txt", bTrajectory);
+    ofBufferToFile("ants/"        + name + "-ant.txt", bTrajectory);
     nextVideo();
 }
 
@@ -459,7 +462,7 @@ void testApp::mousePressed(int x, int y, int button){
                 
                 results += ofToString(path.size()) + "\t20\t255\t" + ofToString(ROI.x + ROI_CENTER) + "\t" + ofToString(RESOLUTION_Y - (ROI.y + ROI_CENTER)) + "\t" + ofToString(ROI.x + ROI_CENTER) + "\t" + ofToString(RESOLUTION_Y - (ROI.y + ROI_CENTER)) + "\n";
                 summary += name + "-" + ofToString(path.size()) + ".jpeg\t1\t171.000\t24.429\t0.0\t255\n";
-                trajectory += path.size() + "\t" + ofToString(ROI.x + ROI_CENTER) + "\t" + ofToString(RESOLUTION_Y - (ROI.y + ROI_CENTER)) + "\n";
+                trajectory += ofToString(path.size()) + "\t" + ofToString(ROI.x + ROI_CENTER) + "\t" + ofToString(RESOLUTION_Y - (ROI.y + ROI_CENTER)) + "\n";
                 
                 path.push_back( ofPoint(ROI.x + ROI_CENTER, ROI.y + ROI_CENTER) );
                 
