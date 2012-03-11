@@ -81,7 +81,7 @@ void testApp::update()
         grayResultImgNoRoi = grayResultImg;
         //grayResultImg.dilate();
                     
-        contourFinder.findContours(grayResultImg, 5, 200, 20, true, true);
+        contourFinder.findContours(grayResultImg, 5, 350, 20, true, true);
         
         nmbContours = contourFinder.nBlobs;
         if( nmbContours == 0 ) {
