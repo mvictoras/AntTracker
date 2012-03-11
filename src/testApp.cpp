@@ -81,7 +81,7 @@ void testApp::update()
         grayResultImgNoRoi = grayResultImg;
         //grayResultImg.dilate();
                     
-        contourFinder.findContours(grayResultImg, 5, 3000, 20, true, true);
+        contourFinder.findContours(grayResultImg, 5, 5000, 20, true, true);
         
         nmbContours = contourFinder.nBlobs;
         if( nmbContours == 0 ) {
@@ -104,8 +104,10 @@ void testApp::update()
             
             if( path.size() > 3 ) {
                 ofPoint prevPoint = path.at( path.size() - 1 );
-                if( (prevPoint.x > ROI.x - 50 + ROI_CENTER && prevPoint.x < ROI.x + 50 + ROI_CENTER) &&
-                    (prevPoint.y > ROI.y - 50 + ROI_CENTER && prevPoint.y < ROI.y + 50 + ROI_CENTER) ) {
+                //cout << "distance:" << sqrt( pow(prevPoint.x - (ROI.x + ROI_CENTER), 2) + pow(prevPoint.y - (ROI.y + ROI_CENTER), 2)) << endl;
+                if( sqrt( pow(prevPoint.x - (ROI.x + ROI_CENTER), 2) + pow(prevPoint.y - (ROI.y + ROI_CENTER), 2)) < 50) { 
+                //if( (prevPoint.x > ROI.x - 50 + ROI_CENTER && prevPoint.x < ROI.x + 50 + ROI_CENTER) &&
+                //    (prevPoint.y > ROI.y - 50 + ROI_CENTER && prevPoint.y < ROI.y + 50 + ROI_CENTER) ) {
                     //cout << results << endl;
                         results += ofToString(path.size()) + "\t20\t255\t" + ofToString(ROI.x + ROI_CENTER) + "\t" + ofToString(RESOLUTION_Y - (ROI.y + ROI_CENTER)) + "\t" + ofToString(ROI.x + ROI_CENTER) + "\t" + ofToString(RESOLUTION_Y - (ROI.y + ROI_CENTER)) + "\n";
                         summary += name + "-" + ofToString(path.size()) + ".jpeg\t1\t171.000\t24.429\t0.0\t255\n";
@@ -152,8 +154,9 @@ void testApp::update()
                     if( theBlob.centroid.y < ROI_CENTER ) ROI.y -= (ROI_CENTER - theBlob.centroid.y);
                     else ROI.y += (theBlob.centroid.y - ROI_CENTER);
                     
-                    if( (prevPoint.x > ROI.x - 15 + ROI_CENTER && prevPoint.x < ROI.x + 15 + ROI_CENTER) &&
-                       (prevPoint.y > ROI.y - 15 + ROI_CENTER && prevPoint.y < ROI.y + 15 + ROI_CENTER) ) {
+                    if( sqrt( pow(prevPoint.x - (ROI.x + ROI_CENTER), 2) + pow(prevPoint.y - (ROI.y + ROI_CENTER), 2)) < 15) {
+                    //if( (prevPoint.x > ROI.x - 15 + ROI_CENTER && prevPoint.x < ROI.x + 15 + ROI_CENTER) &&
+                    //   (prevPoint.y > ROI.y - 15 + ROI_CENTER && prevPoint.y < ROI.y + 15 + ROI_CENTER) ) {
                         results += ofToString(path.size()) + "\t20\t255\t" + ofToString(ROI.x + ROI_CENTER) + "\t" + ofToString(RESOLUTION_Y - (ROI.y + ROI_CENTER)) + "\t" + ofToString(ROI.x + ROI_CENTER) + "\t" + ofToString(RESOLUTION_Y - (ROI.y + ROI_CENTER)) + "\n";
                         summary += name + "-" + ofToString(path.size()) + ".jpeg\t1\t171.000\t24.429\t0.0\t255\n";
                         trajectory += ofToString(path.size()) + "\t" + ofToString(ROI.x + ROI_CENTER) + "\t" + ofToString(RESOLUTION_Y - (ROI.y + ROI_CENTER)) + "\n";
