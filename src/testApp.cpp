@@ -102,7 +102,7 @@ void testApp::update()
             }
             
             
-            if( path.size() > 15 ) {
+            if( path.size() > 3 ) {
                 ofPoint prevPoint = path.at( path.size() - 1 );
                 if( (prevPoint.x > ROI.x - 50 + ROI_CENTER && prevPoint.x < ROI.x + 50 + ROI_CENTER) &&
                     (prevPoint.y > ROI.y - 50 + ROI_CENTER && prevPoint.y < ROI.y + 50 + ROI_CENTER) ) {
@@ -137,7 +137,7 @@ void testApp::update()
             points = contourFinder.blobs;
             bool bSuccess = false;
             
-            if( path.size() > 15 ) {
+            if( path.size() > 3 ) {
                 ofPoint prevPoint = path.at( path.size() - 1 );
                 bool bSuccess = false;
 
