@@ -87,7 +87,7 @@ void testApp::update()
         
         nmbContours = contourFinder.nBlobs;
         if( nmbContours == 0 ) {
-            threshold = (threshold < 40) ? threshold + 0.05 : threshold;
+            threshold = (threshold < 35) ? threshold + 0.05 : threshold;
         }
         if( nmbContours == 1 ) {
             
@@ -255,7 +255,7 @@ void testApp::draw(){
         //ofEnableAlphaBlending();
         ofNoFill();
         ofSetColor(255, 255, 0, 255);
-        ofCircle(path[ path.size() - 1].x /scale, path[path.size() - 1].y /scale, 50 / scale);
+        ofCircle(path[ path.size() - 1].x /scale, path[path.size() - 1].y /scale, 60 / scale);
         //ofDisableAlphaBlending();
         //ofNoFill();
     }
