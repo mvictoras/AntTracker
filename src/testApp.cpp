@@ -49,6 +49,8 @@ void testApp::setup(){
     grayResultImg.allocate(RESOLUTION_X,RESOLUTION_Y);
     grayResultImgNoRoi.allocate(RESOLUTION_X,RESOLUTION_Y);
     
+    ofEnableAlphaBlending();
+    
     resetVideo(960, 540);
 }
 
@@ -248,6 +250,16 @@ void testApp::draw(){
     ofRect(selection);
     //ofRect(ROI.x / 2, ROI.y / 2, ROI.width / 2, ROI.height / 2);
     ofRect(ROI.x / scale, ROI.y / scale, ROI.width / scale, ROI.height / scale);
+    
+    if( path.size() > 0 ) {
+        //ofEnableAlphaBlending();
+        ofNoFill();
+        ofSetColor(255, 255, 0, 255);
+        ofCircle(path[ path.size() - 1].x /scale, path[path.size() - 1].y /scale, 50 / scale);
+        //ofDisableAlphaBlending();
+        //ofNoFill();
+    }
+    ofSetColor(255, 255, 255);
     
     //grayResultImg.resetROI();
     //grayResultImg.draw(RESOLUTION_X /scale, 0, RESOLUTION_X /scale, RESOLUTION_Y / scale);
