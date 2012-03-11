@@ -81,7 +81,7 @@ void testApp::update()
         grayResultImgNoRoi = grayResultImg;
         //grayResultImg.dilate();
                     
-        contourFinder.findContours(grayResultImg, 5, 350, 20, true, true);
+        contourFinder.findContours(grayResultImg, 5, 600, 20, true, true);
         
         nmbContours = contourFinder.nBlobs;
         if( nmbContours == 0 ) {
@@ -328,6 +328,7 @@ void testApp::previousVideo()
         vidPlayer->stop();
         vidPlayer->closeMovie();
         delete vidPlayer;
+        
         
         loadVideo(videoIndex);        
         path.clear();
