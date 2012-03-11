@@ -87,7 +87,7 @@ void testApp::update()
         
         nmbContours = contourFinder.nBlobs;
         if( nmbContours == 0 ) {
-            threshold = (threshold < 50) ? threshold + 0.1 : threshold;
+            threshold = (threshold < 40) ? threshold + 0.05 : threshold;
         }
         if( nmbContours == 1 ) {
             
@@ -113,7 +113,7 @@ void testApp::update()
                     //cout << results << endl;
                         results += ofToString(path.size()) + "\t20\t255\t" + ofToString(ROI.x + ROI_CENTER) + "\t" + ofToString(RESOLUTION_Y - (ROI.y + ROI_CENTER)) + "\t" + ofToString(ROI.x + ROI_CENTER) + "\t" + ofToString(RESOLUTION_Y - (ROI.y + ROI_CENTER)) + "\n";
                         summary += name + "-" + ofToString(path.size()) + ".jpeg\t1\t171.000\t24.429\t0.0\t255\n";
-                        trajectory += ofToString(path.size()) + "\t" + ofToString(ROI.x + ROI_CENTER) + "\t" + ofToString(RESOLUTION_Y - (ROI.y + ROI_CENTER)) + "\n";
+                        trajectory += ofToString(path.size()) + "\t" + ofToString(ROI.x + ROI_CENTER) + "\t" + ofToString(RESOLUTION_Y - (ROI.y + ROI_CENTER)) + "\t" + ofToString(vidPlayer->getCurrentFrame()) + "\t" + ofToString(vidPlayer->getPosition()) + "\n";
                         
                         path.push_back( ofPoint(ROI.x + ROI_CENTER, ROI.y + ROI_CENTER));
                 }
@@ -129,7 +129,7 @@ void testApp::update()
             
                 results += ofToString(path.size()) + "\t20\t255\t" + ofToString(ROI.x + ROI_CENTER) + "\t" + ofToString(RESOLUTION_Y - (ROI.y + ROI_CENTER)) + "\t" + ofToString(ROI.x + ROI_CENTER) + "\t" + ofToString(RESOLUTION_Y - (ROI.y + ROI_CENTER)) + "\n";
                 summary += name + "-" + ofToString(path.size()) + ".jpeg\t1\t171.000\t24.429\t0.0\t255\n";
-                trajectory += ofToString(path.size()) + "\t" + ofToString(ROI.x + ROI_CENTER) + "\t" + ofToString(RESOLUTION_Y - (ROI.y + ROI_CENTER)) + "\n";
+                trajectory += ofToString(path.size()) + "\t" + ofToString(ROI.x + ROI_CENTER) + "\t" + ofToString(RESOLUTION_Y - (ROI.y + ROI_CENTER)) + "\t" + ofToString(vidPlayer->getCurrentFrame()) + "\t" + ofToString(vidPlayer->getPosition()) + "\n";
                 
                 path.push_back( ofPoint(ROI.x + ROI_CENTER, ROI.y + ROI_CENTER));
             }
@@ -161,7 +161,7 @@ void testApp::update()
                     //   (prevPoint.y > ROI.y - 15 + ROI_CENTER && prevPoint.y < ROI.y + 15 + ROI_CENTER) ) {
                         results += ofToString(path.size()) + "\t20\t255\t" + ofToString(ROI.x + ROI_CENTER) + "\t" + ofToString(RESOLUTION_Y - (ROI.y + ROI_CENTER)) + "\t" + ofToString(ROI.x + ROI_CENTER) + "\t" + ofToString(RESOLUTION_Y - (ROI.y + ROI_CENTER)) + "\n";
                         summary += name + "-" + ofToString(path.size()) + ".jpeg\t1\t171.000\t24.429\t0.0\t255\n";
-                        trajectory += ofToString(path.size()) + "\t" + ofToString(ROI.x + ROI_CENTER) + "\t" + ofToString(RESOLUTION_Y - (ROI.y + ROI_CENTER)) + "\n";
+                        trajectory += ofToString(path.size()) + "\t" + ofToString(ROI.x + ROI_CENTER) + "\t" + ofToString(RESOLUTION_Y - (ROI.y + ROI_CENTER)) + "\t" + ofToString(vidPlayer->getCurrentFrame()) + "\t" + ofToString(vidPlayer->getPosition()) + "\n";
                         
                         path.push_back( ofPoint(ROI.x + ROI_CENTER, ROI.y + ROI_CENTER));
                         bSuccess = true;
@@ -272,7 +272,7 @@ void testApp::draw(){
 void testApp::resetVideo(int x, int y) {
     results = " \tArea\tMean\tX\tY\tXM\tYM\n";
     summary = " \tArea\tMean\tX\tY\tXM\tYM\n";
-    trajectory = "Frame\tX\tY\n";
+    trajectory = "Frame\tX\tY\tFrame\tPosition\n";
     xCenter = x;
     yCenter = y;
     
@@ -478,7 +478,7 @@ void testApp::mousePressed(int x, int y, int button){
                 
                 results += ofToString(path.size()) + "\t20\t255\t" + ofToString(ROI.x + ROI_CENTER) + "\t" + ofToString(RESOLUTION_Y - (ROI.y + ROI_CENTER)) + "\t" + ofToString(ROI.x + ROI_CENTER) + "\t" + ofToString(RESOLUTION_Y - (ROI.y + ROI_CENTER)) + "\n";
                 summary += name + "-" + ofToString(path.size()) + ".jpeg\t1\t171.000\t24.429\t0.0\t255\n";
-                trajectory += ofToString(path.size()) + "\t" + ofToString(ROI.x + ROI_CENTER) + "\t" + ofToString(RESOLUTION_Y - (ROI.y + ROI_CENTER)) + "\n";
+                trajectory += ofToString(path.size()) + "\t" + ofToString(ROI.x + ROI_CENTER) + "\t" + ofToString(RESOLUTION_Y - (ROI.y + ROI_CENTER)) + "\t" + ofToString(vidPlayer->getCurrentFrame()) + "\t" + ofToString(vidPlayer->getPosition()) + "\n";
                 
                 path.push_back( ofPoint(ROI.x + ROI_CENTER, ROI.y + ROI_CENTER) );
                 
