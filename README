@@ -1,0 +1,21 @@
+Features
+============
+- Tracks an ant on the experiment board
+- Automatic thresholding
+- Outputs imageJ format (-particles and -summary files)
+- Outputs -ants trajectory files (FBAT step not needed)
+
+
+Command List
+============
+p        - Pause
+r        - Resume
+f        - Save file
+s        - Skip frame
+,        - Go to previous video
+.        - Go to next Video
+1        - Set resolution to 1920x1080
+2        - Set resolution to  960x540
+SpaceBar - Go to next frame and "reset" data file
+Click    - When video is frozen:  Select correct ant blob
+	 - When video is playing: Set the Center of the Board
