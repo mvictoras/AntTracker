@@ -31,7 +31,7 @@ void testApp::setup(){
         }
     }
     
-    threshold = 30;
+    threshold = 25;
     
     remaining = files.size() - startIndex;
     
@@ -87,12 +87,13 @@ void testApp::update()
         
         nmbContours = contourFinder.nBlobs;
         if( nmbContours == 0 ) {
-            threshold = (threshold < 35) ? threshold + 0.05 : threshold;
+            //threshold = (threshold < 35) ? threshold + 0.05 : threshold;
+            //threshold = (threshold > 15) ? threshold - 0.1 : threshold;
         }
         if( nmbContours == 1 ) {
             
             ofxCvBlob theBlob = contourFinder.blobs.at(0);
-            threshold = (threshold > 15) ? threshold - 0.01 : threshold;
+            //threshold = (threshold > 15) ? threshold + 0.01 : threshold;
             if( theBlob.centroid.x < ROI_CENTER && ROI.x - ROI_CENTER + theBlob.centroid.x >= 0) ROI.x -= (ROI_CENTER - theBlob.centroid.x);
             else if (ROI.x + theBlob.centroid.x - ROI_CENTER <= RESOLUTION_X) {
                 ROI.x += (theBlob.centroid.x - ROI_CENTER);
@@ -137,7 +138,8 @@ void testApp::update()
             resetROI(ROI);
         }
         else if( nmbContours > 2 ) {
-            threshold = (threshold > 15) ? threshold - 0.1 : threshold;
+            //threshold = (threshold < 35) ? threshold + 0.05 : threshold;
+            
             points = contourFinder.blobs;
             bool bSuccess = false;
             
@@ -347,7 +349,7 @@ void testApp::previousVideo()
         
         loadVideo(videoIndex);        
         path.clear();
-        threshold = 30;
+        threshold = 25;
         remaining++;
         resetVideo(xCenter, yCenter);
     }
@@ -366,7 +368,7 @@ void testApp::nextVideo()
         loadVideo(videoIndex);
         
         path.clear();
-        threshold = 30;
+        threshold = 25;
         remaining--;
         resetVideo(xCenter, yCenter);  
     }
@@ -388,7 +390,7 @@ void testApp::keyPressed(int key){
     }
     else if( key == ' ' ) {
         
-        threshold = 30;
+        threshold = 25;
         resetVideo(xCenter, yCenter);
         path.clear();
         
