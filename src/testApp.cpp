@@ -1,5 +1,6 @@
 #include "testApp.h"
 
+
 //--------------------------------------------------------------
 void testApp::setup(){
 	
@@ -32,7 +33,8 @@ void testApp::setup(){
     }
     
     threshold = 25;
-    
+    bSelected = false;
+    play = false;
     remaining = files.size() - startIndex;
     
     loadVideo(startIndex);
@@ -42,6 +44,9 @@ void testApp::setup(){
     contrast = 1;
     
     colorImg.allocate(RESOLUTION_X,RESOLUTION_Y);
+    openCVImage.allocate(RESOLUTION_X,RESOLUTION_Y);
+    background.allocate(RESOLUTION_X,RESOLUTION_Y);
+    foreground.allocate(RESOLUTION_X,RESOLUTION_Y);
     prevImg.allocate(RESOLUTION_X,RESOLUTION_Y);
     
     grayColorImg.allocate(RESOLUTION_X,RESOLUTION_Y);
@@ -52,71 +57,136 @@ void testApp::setup(){
     ofEnableAlphaBlending();
     
     resetVideo(960, 540);
+    
 }
 
 
 //--------------------------------------------------------------
 void testApp::update() 
-{
-    vidPlayer->idleMovie();
-    bool bNewFrame = vidPlayer->isFrameNew();
+{   
+    if( vidPlayer->getCurrentFrame() == vidPlayer->getTotalNumFrames() ) return;
+    if( play == false ) return;
     
-    if ( bNewFrame )
-    {
-        videoPosition = vidPlayer->getPosition();
+    vidPlayer->nextFrame();    
+    videoPosition = vidPlayer->getPosition();
+    
+    prevImg = colorImg;
+    colorImg.setFromPixels(vidPlayer->getPixels(), vidWidth, vidHeight);
+    openCVImage.setFromPixels(vidPlayer->getPixels(), vidWidth, vidHeight);
+    
+    grayColorImg = colorImg;
+    grayPrevImg = prevImg;
+    
+    //threshold = 30;
+    grayResultImg.absDiff(grayPrevImg, grayColorImg);
+    //grayResultImg.brightnessContrast(brightness, contrast);
+    //grayResultImg.contrastStretch();
+    grayResultImg.threshold(threshold);
+    grayResultImg.blurGaussian();
+    grayResultImg.erode();
+    grayResultImg.erode();
+    grayResultImg.dilate();
+    grayResultImg.dilate();
+    grayResultImg.dilate();
+    grayResultImg.dilate();
+    //grayResultImg.erode();
+    //grayResultImg.erode();
+    
+    grayResultImgNoRoi = grayResultImg;
+    //grayResultImg.dilate();
+    
+    //cout << "Video:" << vidPlayer->getCurrentFrame();
+
+    
+    if( vidPlayer->getCurrentFrame() == 1 ) {
+        cout << "Video:" << vidPlayer->getCurrentFrame();
+        params = new CvGaussBGStatModelParams;
+        params->win_size = 40;	
+        params->n_gauss = 5;
+        params->bg_threshold = 0.1;
+        params->std_threshold = 3.5;
+        params->minArea = 15;
+        params->weight_init = 0.05;
+        params->variance_init = 10;
         
-        prevImg = colorImg;
-        colorImg.setFromPixels(vidPlayer->getPixels(), vidWidth, vidHeight);
+        //bgModel = cvCreateGaussianBGModel(openCVImage.getCvImage(), params);
+        bgModel = cvCreateGaussianBGModel(openCVImage.getCvImage(), params);
+    }
+    
+    cvUpdateBGStatModel(openCVImage.getCvImage(), bgModel);
+    background = bgModel->background;
+    foreground = bgModel->foreground;
+    
+    
+    contourFinder.findContours(grayResultImg, 5, 5000, 20, true, true);
+    
+    
+    
+    nmbContours = contourFinder.nBlobs;
+    if( nmbContours == 1 ) {
         
-        grayColorImg = colorImg;
-        grayPrevImg = prevImg;
+        ofxCvBlob theBlob = contourFinder.blobs.at(0);
         
-        //threshold = 30;
-        grayResultImg.absDiff(grayPrevImg, grayColorImg);
-        //grayResultImg.brightnessContrast(brightness, contrast);
-        //grayResultImg.contrastStretch();
-        grayResultImg.threshold(threshold);
-        grayResultImg.blurGaussian();
-        grayResultImg.dilate();
-        grayResultImg.erode();
-        grayResultImg.erode();
-        grayResultImgNoRoi = grayResultImg;
-        //grayResultImg.dilate();
-                    
-        contourFinder.findContours(grayResultImg, 5, 5000, 20, true, true);
+        if(ROI.x <= 0.0f)
+            ROI.x = (theBlob.centroid.x - ROI_CENTER);
+        else
+            ROI.x += (theBlob.centroid.x - ROI_CENTER);
         
-        nmbContours = contourFinder.nBlobs;
-        if( nmbContours == 0 ) {
-            //threshold = (threshold < 35) ? threshold + 0.05 : threshold;
-            //threshold = (threshold > 15) ? threshold - 0.1 : threshold;
+        if(ROI.y <= 0.0f)
+            ROI.y = theBlob.centroid.y - ROI_CENTER;
+        else
+            ROI.y += (theBlob.centroid.y - ROI_CENTER);
+        
+        //}
+        
+        if( path.size() > 3 ) {
+            ofPoint prevPoint = path.at( path.size() - 1 );
+            //cout << "distance:" << sqrt( pow(prevPoint.x - (ROI.x + ROI_CENTER), 2) + pow(prevPoint.y - (ROI.y + ROI_CENTER), 2)) << endl;
+            if( sqrt( pow(prevPoint.x - (ROI.x + ROI_CENTER), 2) + pow(prevPoint.y - (ROI.y + ROI_CENTER), 2)) < MAX_STEP) { 
+                    path.push_back( ofVec4f(ROI.x + ROI_CENTER, ROI.y + ROI_CENTER, vidPlayer->getCurrentFrame(), vidPlayer->getPosition()));
+            }
+            else { // Reverse the operation
+                if( theBlob.centroid.x < ROI_CENTER ) ROI.x += (ROI_CENTER - theBlob.centroid.x);
+                else ROI.x -= (theBlob.centroid.x - ROI_CENTER);
+                
+                if( theBlob.centroid.y < ROI_CENTER ) ROI.y += (ROI_CENTER - theBlob.centroid.y);
+                else ROI.y -= (theBlob.centroid.y - ROI_CENTER);
+            }
         }
-        if( nmbContours == 1 ) {
-            
-            ofxCvBlob theBlob = contourFinder.blobs.at(0);
-            //threshold = (threshold > 15) ? threshold + 0.01 : threshold;
-            if( theBlob.centroid.x < ROI_CENTER && ROI.x - ROI_CENTER + theBlob.centroid.x >= 0) ROI.x -= (ROI_CENTER - theBlob.centroid.x);
-            else if (ROI.x + theBlob.centroid.x - ROI_CENTER <= RESOLUTION_X) {
-                ROI.x += (theBlob.centroid.x - ROI_CENTER);
-            }
-            
-            if( theBlob.centroid.y < ROI_CENTER && ROI.y - ROI_CENTER + theBlob.centroid.y) ROI.y -= (ROI_CENTER - theBlob.centroid.y);
-            else if ( ROI.y + theBlob.centroid.y - ROI_CENTER <= RESOLUTION_Y) {
-                ROI.y += (theBlob.centroid.y - ROI_CENTER);
-            }
-            
-            
-            if( path.size() > 3 ) {
-                ofPoint prevPoint = path.at( path.size() - 1 );
-                //cout << "distance:" << sqrt( pow(prevPoint.x - (ROI.x + ROI_CENTER), 2) + pow(prevPoint.y - (ROI.y + ROI_CENTER), 2)) << endl;
-                if( sqrt( pow(prevPoint.x - (ROI.x + ROI_CENTER), 2) + pow(prevPoint.y - (ROI.y + ROI_CENTER), 2)) < 50) { 
-                //if( (prevPoint.x > ROI.x - 50 + ROI_CENTER && prevPoint.x < ROI.x + 50 + ROI_CENTER) &&
-                //    (prevPoint.y > ROI.y - 50 + ROI_CENTER && prevPoint.y < ROI.y + 50 + ROI_CENTER) ) {
-                    //cout << results << endl;
-                        results += ofToString(path.size()) + "\t20\t255\t" + ofToString(ROI.x + ROI_CENTER) + "\t" + ofToString(RESOLUTION_Y - (ROI.y + ROI_CENTER)) + "\t" + ofToString(ROI.x + ROI_CENTER) + "\t" + ofToString(RESOLUTION_Y - (ROI.y + ROI_CENTER)) + "\n";
-                        summary += name + "-" + ofToString(path.size()) + ".jpeg\t1\t171.000\t24.429\t0.0\t255\n";
-                        trajectory += ofToString(path.size()) + "\t" + ofToString(ROI.x + ROI_CENTER) + "\t" + ofToString(RESOLUTION_Y - (ROI.y + ROI_CENTER)) + "\t" + ofToString(vidPlayer->getCurrentFrame()) + "\t" + ofToString(vidPlayer->getPosition()) + "\n";
-                        
-                        path.push_back( ofPoint(ROI.x + ROI_CENTER, ROI.y + ROI_CENTER));
+        else {
+            path.push_back( ofVec4f(ROI.x + ROI_CENTER, ROI.y + ROI_CENTER, vidPlayer->getCurrentFrame(), vidPlayer->getPosition()));
+        }
+        
+        resetROI(ROI);
+    }
+    else if( nmbContours > 2 ) {
+        //threshold = (threshold < 35) ? threshold + 0.05 : threshold;
+        
+        points = contourFinder.blobs;
+        bool bSuccess = false;
+        
+        if( path.size() > 3 ) {
+            ofPoint prevPoint = path.at( path.size() - 1 );
+            bool bSuccess = false;
+
+            int i = 0;
+            while( i < contourFinder.blobs.size() && !bSuccess ) {
+                
+                ofxCvBlob theBlob = contourFinder.blobs.at(i);
+                
+                if(ROI.x <= 0.0f)
+                    ROI.x = (theBlob.centroid.x - ROI_CENTER);
+                else
+                    ROI.x += (theBlob.centroid.x - ROI_CENTER);
+                
+                if(ROI.y <= 0.0f)
+                    ROI.y = theBlob.centroid.y - ROI_CENTER;
+                else
+                    ROI.y += (theBlob.centroid.y - ROI_CENTER);
+                
+                if( sqrt( pow(prevPoint.x - (ROI.x + ROI_CENTER), 2) + pow(prevPoint.y - (ROI.y + ROI_CENTER), 2)) < MAX_STEP) {
+                    path.push_back( ofVec4f(ROI.x + ROI_CENTER, ROI.y + ROI_CENTER, vidPlayer->getCurrentFrame(), vidPlayer->getPosition()));
+                    bSuccess = true;
                 }
                 else { // Reverse the operation
                     if( theBlob.centroid.x < ROI_CENTER ) ROI.x += (ROI_CENTER - theBlob.centroid.x);
@@ -125,71 +195,21 @@ void testApp::update()
                     if( theBlob.centroid.y < ROI_CENTER ) ROI.y += (ROI_CENTER - theBlob.centroid.y);
                     else ROI.y -= (theBlob.centroid.y - ROI_CENTER);
                 }
-            }
-            else {
-            
-                results += ofToString(path.size()) + "\t20\t255\t" + ofToString(ROI.x + ROI_CENTER) + "\t" + ofToString(RESOLUTION_Y - (ROI.y + ROI_CENTER)) + "\t" + ofToString(ROI.x + ROI_CENTER) + "\t" + ofToString(RESOLUTION_Y - (ROI.y + ROI_CENTER)) + "\n";
-                summary += name + "-" + ofToString(path.size()) + ".jpeg\t1\t171.000\t24.429\t0.0\t255\n";
-                trajectory += ofToString(path.size()) + "\t" + ofToString(ROI.x + ROI_CENTER) + "\t" + ofToString(RESOLUTION_Y - (ROI.y + ROI_CENTER)) + "\t" + ofToString(vidPlayer->getCurrentFrame()) + "\t" + ofToString(vidPlayer->getPosition()) + "\n";
-                
-                path.push_back( ofPoint(ROI.x + ROI_CENTER, ROI.y + ROI_CENTER));
-            }
-            
-            resetROI(ROI);
-        }
-        else if( nmbContours > 2 ) {
-            //threshold = (threshold < 35) ? threshold + 0.05 : threshold;
-            
-            points = contourFinder.blobs;
-            bool bSuccess = false;
-            
-            if( path.size() > 3 ) {
-                ofPoint prevPoint = path.at( path.size() - 1 );
-                bool bSuccess = false;
-
-                int i = 0;
-                while( i < contourFinder.blobs.size() && !bSuccess ) {
-                    
-                    ofxCvBlob theBlob = contourFinder.blobs.at(i);
-                    
-                    if( theBlob.centroid.x < ROI_CENTER ) ROI.x -= (ROI_CENTER - theBlob.centroid.x);
-                    else ROI.x += (theBlob.centroid.x - ROI_CENTER);
-                    
-                    if( theBlob.centroid.y < ROI_CENTER ) ROI.y -= (ROI_CENTER - theBlob.centroid.y);
-                    else ROI.y += (theBlob.centroid.y - ROI_CENTER);
-                    
-                    if( sqrt( pow(prevPoint.x - (ROI.x + ROI_CENTER), 2) + pow(prevPoint.y - (ROI.y + ROI_CENTER), 2)) < 15) {
-                    //if( (prevPoint.x > ROI.x - 15 + ROI_CENTER && prevPoint.x < ROI.x + 15 + ROI_CENTER) &&
-                    //   (prevPoint.y > ROI.y - 15 + ROI_CENTER && prevPoint.y < ROI.y + 15 + ROI_CENTER) ) {
-                        results += ofToString(path.size()) + "\t20\t255\t" + ofToString(ROI.x + ROI_CENTER) + "\t" + ofToString(RESOLUTION_Y - (ROI.y + ROI_CENTER)) + "\t" + ofToString(ROI.x + ROI_CENTER) + "\t" + ofToString(RESOLUTION_Y - (ROI.y + ROI_CENTER)) + "\n";
-                        summary += name + "-" + ofToString(path.size()) + ".jpeg\t1\t171.000\t24.429\t0.0\t255\n";
-                        trajectory += ofToString(path.size()) + "\t" + ofToString(ROI.x + ROI_CENTER) + "\t" + ofToString(RESOLUTION_Y - (ROI.y + ROI_CENTER)) + "\t" + ofToString(vidPlayer->getCurrentFrame()) + "\t" + ofToString(vidPlayer->getPosition()) + "\n";
-                        
-                        path.push_back( ofPoint(ROI.x + ROI_CENTER, ROI.y + ROI_CENTER));
-                        bSuccess = true;
-                    }
-                    else { // Reverse the operation
-                        if( theBlob.centroid.x < ROI_CENTER ) ROI.x += (ROI_CENTER - theBlob.centroid.x);
-                        else ROI.x -= (theBlob.centroid.x - ROI_CENTER);
-                        
-                        if( theBlob.centroid.y < ROI_CENTER ) ROI.y += (ROI_CENTER - theBlob.centroid.y);
-                        else ROI.y -= (theBlob.centroid.y - ROI_CENTER);
-                    }
-                    i++;
-                } 
-            }
-            
-            if( !bSuccess ) {
-                vidPlayer->stop();
-                haveToSelect = true;
-            }
+                i++;
+            } 
         }
         
-        
-        
-        if( vidPlayer->getCurrentFrame() == vidPlayer->getTotalNumFrames() ) {
-            writeVideo();
+        if( !bSuccess ) {
+            //vidPlayer->stop();
+            play = false;
+            haveToSelect = true;
         }
+    }
+    
+    
+    
+    if( vidPlayer->getCurrentFrame() == vidPlayer->getTotalNumFrames() ) {
+        //writeVideo();
     }
 }
 
@@ -204,7 +224,7 @@ void testApp::draw(){
     ofDrawBitmapString("Resolution: " + ofToString(vidWidth) + "x" + ofToString(vidHeight), 150, 10);
     ofDrawBitmapString("Number of contours: " + ofToString(nmbContours), 350, 10);
     ofDrawBitmapString("File: " + name, 600, 10);
-    ofDrawBitmapString(ofToString(videoPosition * 100) + " of " + ofToString(videoDuration) + "sec", 800, 10);
+    ofDrawBitmapString(ofToString(videoPosition * videoDuration) + " of " + ofToString(videoDuration) + "sec", 800, 10);
     
     // Commands
     ofDrawBitmapString("Commands",                   RESOLUTION_X / scale - 200, 25);
@@ -221,7 +241,7 @@ void testApp::draw(){
     
     ofDrawBitmapString("Remaining: " + ofToString(remaining),     RESOLUTION_X / scale - 200, RESOLUTION_Y / 2 - 30);
 
-    ofSetColor(255, 50, 50);
+    ofSetColor(255, 25, 25);
     
     ofPushMatrix();
     {
@@ -257,16 +277,34 @@ void testApp::draw(){
         //ofEnableAlphaBlending();
         ofNoFill();
         ofSetColor(255, 255, 0, 255);
-        ofCircle(path[ path.size() - 1].x /scale, path[path.size() - 1].y /scale, 60 / scale);
+        ofCircle(path[ path.size() - 1].x /scale, path[path.size() - 1].y /scale, MAX_STEP / scale);
         //ofDisableAlphaBlending();
         //ofNoFill();
+    }
+    
+
+    
+    if( bSelected ) {
+        ofFill();
+        ofSetColor(255, 0, 0, 255);
+        ofCircle( (*selectedPoint).x /scale, (*selectedPoint).y /scale, 10);
+        ofNoFill();
     }
     ofSetColor(255, 255, 255);
     
     //grayResultImg.resetROI();
     //grayResultImg.draw(RESOLUTION_X /scale, 0, RESOLUTION_X /scale, RESOLUTION_Y / scale);
     //resetROI(ROI);
-    colorImg.draw(0, 0, RESOLUTION_X /scale, RESOLUTION_Y / scale);
+    //colorImg.draw(0, 0, RESOLUTION_X /scale, RESOLUTION_Y / scale);
+    //openCVImage.draw(0, 0, RESOLUTION_X /scale, RESOLUTION_Y / scale);
+    //background.draw(0, 0, RESOLUTION_X /scale, RESOLUTION_Y / scale);
+    
+    //ofSetColor(255, 255, 255, 12);
+    //openCVImage.draw(0, 0, RESOLUTION_X / scale, RESOLUTION_Y / scale);
+    
+    ofSetColor(255, 255, 255);
+    foreground.draw(0, 0, RESOLUTION_X /scale, RESOLUTION_Y / scale);
+    
     
     ofSetColor(255, 255, 255);
 }
@@ -282,6 +320,18 @@ void testApp::resetVideo(int x, int y) {
     ROI.y = yCenter - ROI_HEIGHT / 2;
     ROI.width = ROI_WIDTH;
     ROI.height = ROI_HEIGHT;
+    
+    /*
+    CvGaussBGStatModelParams* params = new CvGaussBGStatModelParams;
+    params->win_size = 2;	
+    params->n_gauss = 5;
+    params->bg_threshold = 0.7;
+    params->std_threshold = 3.5;
+    params->minArea = 15;
+    params->weight_init = 0.05;
+    params->variance_init = 30;
+    
+    bgModel = cvCreateGaussianBGModel(colorImg.getCvImage() ,params); */
     
     resetROI(ROI);
 }
@@ -300,6 +350,9 @@ void testApp::resetROI(ofRectangle ROI_) {
     grayPrevImg.setROI(ROI_);
     grayResultImg.setROI(ROI_);
     
+    if( vidPlayer->getCurrentFrame() != 1 )
+        bgModel = cvCreateGaussianBGModel(openCVImage.getCvImage(), params);
+    
 }
 
 void testApp::loadVideo(int index) {
@@ -307,7 +360,8 @@ void testApp::loadVideo(int index) {
     vidPlayer = new ofVideoPlayer();
     vidPlayer->loadMovie(files[videoIndex].getAbsolutePath());
     vidPlayer->setLoopState(OF_LOOP_NONE);
-    vidPlayer->play();
+    //vidPlayer->play();
+    play = true;
     
     videoDuration = vidPlayer->getDuration();
     videoPosition = vidPlayer->getPosition();
@@ -324,6 +378,12 @@ void testApp::writeVideo() {
     ofBuffer bResults;
     ofBuffer bSummary;
     ofBuffer bTrajectory;
+    
+    for(int i = 0; i < path.size(); i++ ) {
+        results += ofToString(i + 1) + "\t20\t255\t" + ofToString(path[i].x) + "\t" + ofToString(RESOLUTION_Y - (path[i].y)) + "\t" + ofToString(path[i].x) + "\t" + ofToString(RESOLUTION_Y - (path[i].y)) + "\n";
+        summary += name + "-" + ofToString(i + 1) + ".jpeg\t1\t171.000\t24.429\t0.0\t255\n";
+        trajectory += ofToString(i + 1) + "\t" + ofToString(path[i].x) + "\t" + ofToString(RESOLUTION_Y - (path[i].y)) + "\t" + ofToString(path[i].z) + "\t" + ofToString(path[i].w) + "\n";
+    }
     
     bResults.set(results.c_str(), results.size());
     bSummary.set(summary.c_str(), summary.size());
@@ -342,6 +402,7 @@ void testApp::previousVideo()
         cout << videoIndex << endl;
         videoIndex--;
         
+        play = false;
         vidPlayer->stop();
         vidPlayer->closeMovie();
         delete vidPlayer;
@@ -361,6 +422,7 @@ void testApp::nextVideo()
         cout << videoIndex << endl;
         videoIndex++;
     
+        play = false;
         vidPlayer->stop();
         vidPlayer->closeMovie();
         delete vidPlayer;
@@ -395,7 +457,8 @@ void testApp::keyPressed(int key){
         path.clear();
         
         if( haveToSelect ) {
-            vidPlayer->play();
+            //vidPlayer->play();
+            play = true;
             haveToSelect = false; 
         }
     }
@@ -406,14 +469,17 @@ void testApp::keyPressed(int key){
         previousVideo();
     }
     else if( key == 'p' ) {
-        vidPlayer->stop();
+        play = false;
+        //vidPlayer->stop();
     }
     else if( key == 'r' ) {
-        vidPlayer->play();
+        //vidPlayer->play();
+        play = true;
     }
     else if( key == 's' ) {
         if( haveToSelect == true ) {
-            vidPlayer->play();
+            //vidPlayer->play();
+            play = true;
             haveToSelect = false;
         }
     }
@@ -446,6 +512,11 @@ void testApp::keyPressed(int key){
     else if( key == 'd' ) {
         contrast++;
     }
+    else if( key == 'x' ) {
+        if ( bSelected ) {
+            path.erase(selectedPoint);       
+        }
+    }
 }
 
 //--------------------------------------------------------------
@@ -453,7 +524,15 @@ void testApp::keyReleased(int key){
 }
 
 //--------------------------------------------------------------
-void testApp::mouseMoved(int x, int y ){
+void testApp::mouseMoved(int x, int y ) {
+    vector<ofVec4f>::iterator it;
+    bSelected = false;
+    for ( it = path.begin(); it < path.end(); it++ ) {
+        if( x > (*it).x - 2 && x < (*it).x + 2 && y > (*it).y - 2 && y < (*it).y + 2 ) {
+            selectedPoint = it;
+            bSelected = true;
+        }
+    }
 }
 
 //--------------------------------------------------------------
@@ -478,16 +557,19 @@ void testApp::mousePressed(int x, int y, int button){
                 if( points.at(i).centroid.y < ROI_CENTER ) ROI.y -= (ROI_CENTER - points.at(i).centroid.y);
                 else ROI.y += (points.at(i).centroid.y - ROI_CENTER);
                 
+                /*
                 results += ofToString(path.size()) + "\t20\t255\t" + ofToString(ROI.x + ROI_CENTER) + "\t" + ofToString(RESOLUTION_Y - (ROI.y + ROI_CENTER)) + "\t" + ofToString(ROI.x + ROI_CENTER) + "\t" + ofToString(RESOLUTION_Y - (ROI.y + ROI_CENTER)) + "\n";
                 summary += name + "-" + ofToString(path.size()) + ".jpeg\t1\t171.000\t24.429\t0.0\t255\n";
                 trajectory += ofToString(path.size()) + "\t" + ofToString(ROI.x + ROI_CENTER) + "\t" + ofToString(RESOLUTION_Y - (ROI.y + ROI_CENTER)) + "\t" + ofToString(vidPlayer->getCurrentFrame()) + "\t" + ofToString(vidPlayer->getPosition()) + "\n";
+                 
+                 */
                 
-                path.push_back( ofPoint(ROI.x + ROI_CENTER, ROI.y + ROI_CENTER) );
-                
+                path.push_back( ofVec4f(ROI.x + ROI_CENTER, ROI.y + ROI_CENTER, vidPlayer->getCurrentFrame(), vidPlayer->getPosition() ) );
                 
                 resetROI(ROI);
                 
-                vidPlayer->play();
+                //vidPlayer->play();
+                play = true;
             }
         }
     }
