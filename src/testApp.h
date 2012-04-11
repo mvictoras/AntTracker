@@ -1,12 +1,17 @@
 #pragma once
 #include "ofMain.h"
 #include "ofxOpenCv.h"
+#include "opencv/cv.h"
+#include "opencv/cvaux.h"
+#include "opencv/highgui.h"
+
 
 #define ROI_WIDTH       200
 #define ROI_HEIGHT      200
 #define ROI_CENTER      100
 #define RESOLUTION_X    1920
 #define RESOLUTION_Y    1080
+#define MAX_STEP        50
 
 class testApp : public ofBaseApp{
 
@@ -41,6 +46,10 @@ class testApp : public ofBaseApp{
         ofxCvColorImage			colorImg;
         ofxCvGrayscaleImage     grayColorImg;
     
+        ofxCvColorImage         openCVImage;
+        ofxCvColorImage         background;
+        ofxCvGrayscaleImage     foreground;
+    
         ofxCvColorImage			prevImg;
         ofxCvGrayscaleImage     grayPrevImg;
     
@@ -51,10 +60,15 @@ class testApp : public ofBaseApp{
     
         ofxCvBlob               theAnt;
     
+        CvBGStatModel*          bgModel;
+        CvGaussBGStatModelParams* params;
     
         int                     vidWidth; 
         int                     vidHeight;
         int                     nmbContours;
+    
+        int                     neg_x_offset;
+        int                     neg_y_offset;
     
         // For output
         string                  results;
@@ -69,17 +83,20 @@ class testApp : public ofBaseApp{
     
         float                   videoDuration;
         float                   videoPosition;
+        bool                    play;
     
         int                     xCenter;
         int                     yCenter;
         int                     scale;
         vector<ofxCvBlob>       points;
-        vector<ofPoint>         path;
+        vector<ofVec4f>         path;
+        vector<ofVec4f>::iterator selectedPoint;
+        bool                    bSelected;
     
         bool                    haveToSelect;
         int                     remaining;
         int                     startIndex;
-        float                     threshold;
+        float                   threshold;
         int                     brightness;
         int                     contrast;
     
